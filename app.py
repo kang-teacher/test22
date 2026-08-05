@@ -1,7 +1,9 @@
 import os
+import ssl
 import random
 import requests
 import urllib.parse
+import urllib.request
 from flask import Flask, request, jsonify
 from bs4 import BeautifulSoup
 import anthropic
@@ -114,7 +116,7 @@ def google_news():
     return jsonify(kakao_text(result))
 
 # 5. 파라미터로 Claude 연동하기
-@app.route("/chatgpt-param", methods=["POST"])
+@app.route("/claude-param", methods=["POST"])
 def claude_param():
     data = request.get_json(silent=True) or {}
     tt = data.get("action", {}).get("params", {}).get("파라미터", "").strip()
@@ -142,9 +144,30 @@ def claude_param():
 
     return jsonify(kakao_text(result_text))
 
+# 6. 울산 날씨 크롤링 (네이버 검색 결과)
+@app.route("/weather", methods=["GET", "POST"])
+def ulsan_weather_skill():
+    try:
+        context = ssl._create_unverified_context()
+        url = "https://search.naver.com/search.naver?query=%EC%9A%B8%EC%82%B0%20%EB%82%A0%EC%94%A8"
+
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        webpage = urllib.request.urlopen(req, context=context)
+        soup = BeautifulSoup(webpage, "html.parser")
+
+        temps = soup.find("div", class_="temperature_text")
+        summary = soup.find("p", class_="summary")
+
+        if temps and summary:
+            result_text = "울산 " + temps.get_text(strip=True) + " " + summary.get_text(strip=True)
+        else:
+            result_text = "날씨 정보를 가져오지 못했습니다."
+
+    except Exception as e:
+        result_text = f"날씨 조회 중 오류가 발생했습니다: {str(e)}"
+
+    return jsonify(kakao_text(result_text))
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
-
-
-
