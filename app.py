@@ -3,7 +3,7 @@ import random
  
 app = Flask(__name__)
  
-@app.route('/skill', methods=['POST']])
+@app.route('/skill', methods=['POST'])
 def skill():
     number = random.randint(1, 100)
     answer = "뽑힌 숫자는 " + str(number) + " 입니다."
